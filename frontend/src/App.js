@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import "./App.css"; // import the new CSS
 
 function App() {
   const [users, setUsers] = useState([]);
@@ -9,7 +10,6 @@ function App() {
   const [orderProduct, setOrderProduct] = useState("");
   const [orderPrice, setOrderPrice] = useState("");
 
-  // Fetch users on mount
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -21,12 +21,10 @@ function App() {
       .catch(err => console.error(err));
   };
 
-  // Add or update user
   const handleSubmit = (e) => {
     e.preventDefault();
 
     if (editingUserId) {
-      // Update existing user
       fetch(`http://localhost:8080/api/users/${editingUserId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -41,7 +39,6 @@ function App() {
         })
         .catch(err => console.error(err));
     } else {
-      // Create new user
       fetch("http://localhost:8080/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -57,68 +54,40 @@ function App() {
     }
   };
 
-  // Delete user
   const deleteUser = (id) => {
-    fetch(`http://localhost:8080/api/users/${id}`, {
-      method: "DELETE"
-    })
+    fetch(`http://localhost:8080/api/users/${id}`, { method: "DELETE" })
       .then(() => fetchUsers())
       .catch(err => console.error(err));
   };
 
-  // Load user data into form for editing
   const editUser = (user) => {
     setEditingUserId(user.id);
     setName(user.name);
     setEmail(user.email);
   };
 
-  // Add order for a user
-  const addOrder = (userId) => {
-    if (!orderProduct || !orderPrice) return;
-
-    fetch(`http://localhost:8080/api/orders`, {
+  const createOrder = (userId, product, price) => {
+    fetch("http://localhost:8080/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productName: orderProduct, price: parseFloat(orderPrice), userId })
+      body: JSON.stringify({ userId, productName: product, price })
     })
       .then(res => res.json())
-      .then(() => {
-        fetchUsers();
-        setOrderProduct("");
-        setOrderPrice("");
-      })
+      .then(() => fetchUsers())
       .catch(err => console.error(err));
   };
 
-  const createOrder = (userId, product, price) => {
-  fetch("http://localhost:8080/api/orders", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, productName: product, price }) // note userId
-  })
-    .then(res => res.json())
-    .then(newOrder => {
-      // Optionally, update the UI
-      fetchUsers(); // refresh users with their orders
-    })
-    .catch(err => console.error(err));
-};
-
-
   return (
-    <div style={{ padding: "20px" }}>
+    <div className="container">
       <h1>Users</h1>
 
-      {/* User form */}
-      <form onSubmit={handleSubmit} style={{ marginBottom: "20px" }}>
+      <form onSubmit={handleSubmit}>
         <input
           type="text"
           placeholder="Name"
           value={name}
           onChange={e => setName(e.target.value)}
           required
-          style={{ marginRight: "10px" }}
         />
         <input
           type="email"
@@ -126,50 +95,47 @@ function App() {
           value={email}
           onChange={e => setEmail(e.target.value)}
           required
-          style={{ marginRight: "10px" }}
         />
         <button type="submit">{editingUserId ? "Update User" : "Add User"}</button>
         {editingUserId && (
           <button
             type="button"
             onClick={() => { setEditingUserId(null); setName(""); setEmail(""); }}
-            style={{ marginLeft: "10px" }}
           >
             Cancel
           </button>
         )}
       </form>
 
-      {/* User list with orders */}
       {users.map(u => (
-  <div key={u.id} style={{ marginBottom: "20px", border: "1px solid #ccc", padding: "10px" }}>
-    <span>{u.name} — {u.email}</span>
+        <div key={u.id} className="user-card">
+          <div className="user-header">
+            <span>{u.name} — {u.email}</span>
+            <div>
+              <button onClick={() => editUser(u)}>Edit</button>
+              <button onClick={() => deleteUser(u.id)}>Delete</button>
+            </div>
+          </div>
 
-    {/* Existing buttons */}
-    <button onClick={() => editUser(u)} style={{ marginLeft: "10px" }}>Edit</button>
-    <button onClick={() => deleteUser(u.id)} style={{ marginLeft: "5px" }}>Delete</button>
+          <div className="add-order-form">
+            <input type="text" placeholder="Product" id={`product-${u.id}`} />
+            <input type="number" placeholder="Price" id={`price-${u.id}`} />
+            <button onClick={() => {
+              const product = document.getElementById(`product-${u.id}`).value;
+              const price = document.getElementById(`price-${u.id}`).value;
+              createOrder(u.id, product, price);
+            }}>Add Order</button>
+          </div>
 
-    {/* Add order form */}
-    <div style={{ marginTop: "10px" }}>
-      <input type="text" placeholder="Product" id={`product-${u.id}`} />
-      <input type="number" placeholder="Price" id={`price-${u.id}`} />
-      <button onClick={() => {
-        const product = document.getElementById(`product-${u.id}`).value;
-        const price = document.getElementById(`price-${u.id}`).value;
-        createOrder(u.id, product, price);
-      }}>Add Order</button>
-    </div>
-
-    {/* Display orders if any */}
-    {u.orders?.map(o => (
-      <div key={o.id} style={{ marginLeft: "20px" }}>
-        {o.productName} — ${o.price}
-      </div>
-    ))}
-  </div>
-))}
-
-
+          <div className="order-list">
+            {u.orders?.map(o => (
+              <div key={o.id} className="order-item">
+                {o.productName} — ${o.price}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

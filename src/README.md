@@ -1,5 +1,10 @@
 Git Repo:
 https://github.com/dokhanhchi811-ai/fullstack-demo
+git status
+git add .
+git commit -m "commit message"
+git push
+
 
 Fix Editor
 Cmd + Shift + P : Java : Clean Java Language Server Workspace
