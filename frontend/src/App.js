@@ -91,6 +91,21 @@ function App() {
       .catch(err => console.error(err));
   };
 
+  const createOrder = (userId, product, price) => {
+  fetch("http://localhost:8080/api/orders", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, productName: product, price }) // note userId
+  })
+    .then(res => res.json())
+    .then(newOrder => {
+      // Optionally, update the UI
+      fetchUsers(); // refresh users with their orders
+    })
+    .catch(err => console.error(err));
+};
+
+
   return (
     <div style={{ padding: "20px" }}>
       <h1>Users</h1>
@@ -127,47 +142,34 @@ function App() {
 
       {/* User list with orders */}
       {users.map(u => (
-        <div key={u.id} style={{ border: "1px solid gray", marginBottom: "10px", padding: "10px" }}>
-          <div>
-            <strong>{u.name}</strong> — {u.email}
-            <button onClick={() => editUser(u)} style={{ marginLeft: "10px" }}>Edit</button>
-            <button onClick={() => deleteUser(u.id)} style={{ marginLeft: "5px" }}>Delete</button>
-          </div>
+  <div key={u.id} style={{ marginBottom: "20px", border: "1px solid #ccc", padding: "10px" }}>
+    <span>{u.name} — {u.email}</span>
 
-          {/* Orders */}
-          <div style={{ marginTop: "10px" }}>
-            <h4>Orders:</h4>
-            {u.orders && u.orders.length > 0 ? (
-              <ul>
-                {u.orders.map(o => (
-                  <li key={o.id}>{o.product} — ${o.price}</li>
-                ))}
-              </ul>
-            ) : (
-              <p>No orders yet.</p>
-            )}
+    {/* Existing buttons */}
+    <button onClick={() => editUser(u)} style={{ marginLeft: "10px" }}>Edit</button>
+    <button onClick={() => deleteUser(u.id)} style={{ marginLeft: "5px" }}>Delete</button>
 
-            {/* Add Order Form */}
-            <div style={{ marginTop: "10px" }}>
-              <input
-                type="text"
-                placeholder="Product"
-                value={orderProduct}
-                onChange={e => setOrderProduct(e.target.value)}
-                style={{ marginRight: "5px" }}
-              />
-              <input
-                type="number"
-                placeholder="Price"
-                value={orderPrice}
-                onChange={e => setOrderPrice(e.target.value)}
-                style={{ marginRight: "5px" }}
-              />
-              <button onClick={() => addOrder(u.id)}>Add Order</button>
-            </div>
-          </div>
-        </div>
-      ))}
+    {/* Add order form */}
+    <div style={{ marginTop: "10px" }}>
+      <input type="text" placeholder="Product" id={`product-${u.id}`} />
+      <input type="number" placeholder="Price" id={`price-${u.id}`} />
+      <button onClick={() => {
+        const product = document.getElementById(`product-${u.id}`).value;
+        const price = document.getElementById(`price-${u.id}`).value;
+        createOrder(u.id, product, price);
+      }}>Add Order</button>
+    </div>
+
+    {/* Display orders if any */}
+    {u.orders?.map(o => (
+      <div key={o.id} style={{ marginLeft: "20px" }}>
+        {o.productName} — ${o.price}
+      </div>
+    ))}
+  </div>
+))}
+
+
     </div>
   );
 }
